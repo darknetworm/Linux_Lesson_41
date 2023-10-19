@@ -1,0 +1,9 @@
+server {
+        listen 8082;
+        listen [::]:8082;
+	location / {
+            include proxy_params;
+            proxy_pass http://unix:/home/vagrant/test/mysite/mysite.sock;
+        }
+
+}
