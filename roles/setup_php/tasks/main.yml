@@ -1,0 +1,58 @@
+---
+#Создаем директорию для обработки php-сайта nginx
+  - name: Make php sites directory
+    file:
+      path: /var/www/php
+      state: directory
+      mode: '0755'
+#Копируем настройки nginx в директорию sites-available
+  - name: Copy php available
+    template:
+      src: php
+      dest: /etc/nginx/sites-available/php
+#Создаем симлинк для доступа к сайту
+  - name: Create simlink for php
+    file:
+      src: /etc/nginx/sites-available/php
+      dest: /etc/nginx/sites-enabled/php
+      state: link
+#Запускаем nginx
+  - name: Start nginx
+    service:
+      name: nginx
+      state: restarted
+#Устанавливаем клиент mysql для создания БД WordPress
+  - name: Install mysqlclient
+    pip:
+      name: mysqlclient
+#Создаем БД для WordPress
+  - name: Create wordpress database
+    community.mysql.mysql_db:
+      name: wordpress
+      state: present
+      encoding: utf8
+#Создаем пользователя БД
+  - name: Create wordpress db user
+    community.mysql.mysql_user:
+      name: wordpressuser
+      password: password
+      priv: 'wordpress.*:ALL,GRANT'
+      state: present
+#Устанавливаем WordPress
+  - name: Install WordPress
+    apt:
+      name: wordpress
+      state: latest
+#Копируем структуру WordPress в рабочую директорию
+  - name: Upload worpress to site directory
+    shell: cp -r /usr/share/wordpress/* /var/www/php
+#Копируем файл приветствия
+  - name: Copy initial page
+    template:
+      src: config-localhost.php
+      dest: /etc/wordpress/config-localhost.php
+#Копируем конфигурационный файл WordPress
+  - name: Copy wordpress config page
+    template:
+      src: wp-config.php
+      dest: /var/www/php/wp-config.php
