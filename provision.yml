@@ -1,0 +1,57 @@
+---
+#Предварительные задачи
+  - name: General setup
+    hosts: web
+    become: true
+    pre_tasks:
+#Устанавливаем необходимые пакеты из репозитория
+    - name: Install packages
+      apt:
+        name:
+        - nginx
+        - php7.4-cli
+        - php7.4-fpm
+#        - uwsgi
+#        - uwsgi-plugin-python3
+        - nodejs
+        - build-essential
+        - npm
+        - mysql-server
+        - pkg-config
+        - python3-dev
+        - default-libmysqlclient-dev
+        - python3-pip
+        - python3-virtualenv
+        - php-curl
+        - php-gd
+        - php-mbstring
+        - php-xml
+        - php-xmlrpc
+        - php-soap
+        - php-intl
+        - php-zip
+        state: latest
+        update_cache: true
+#Отключаем firewall
+    - name: Disable firewall
+      service:
+        name: ufw
+        state: stopped
+        enabled: false
+#Задачи по установке и настройке сервера
+  - name: Setup servers
+    hosts: web
+    become: true
+    roles:
+#Устанавливаем nginx--php-fpm--wordpress
+    - role: setup_php
+#Устанавливаем nginx--gunicorn--django
+    - role: setup_python
+#Устанавливаем nginx--js--node.js
+    - role: setup_js
+    post_tasks:
+#Перезапускаем сервер nginx
+    - name: Restart nginx
+      service:
+        name: nginx
+        state: restarted
