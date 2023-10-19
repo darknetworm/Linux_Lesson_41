@@ -1,0 +1,32 @@
+---
+#Создаем директорию для обработки js-сайта nginx
+  - name: Make js sites directory
+    file:
+      path: /var/www/js
+      state: directory
+      mode: '0755'
+#Копируем заглавную страницу для работы с node.js
+  - name: Copy js page
+    template:
+      src: index.js
+      dest: /var/www/js/index.js
+#Устанавливем менеджер процессов для node.js
+  - name: Install pm2
+    npm:
+      name: pm2
+      global: true
+#Запускаем менеджер процессов для рабочей директории
+  - name: Start Node.js server
+    shell: pm2 start /var/www/js/index.js
+#Копируем настройки nginx в директорию sites-available
+  - name: Copy js available
+    template:
+      src: js
+      dest: /etc/nginx/sites-available/js
+#Создаем симлинк для доступа к сайту
+  - name: Create simlink for js
+    file:
+      src: /etc/nginx/sites-available/js
+      dest: /etc/nginx/sites-enabled/js
+      state: link
+
