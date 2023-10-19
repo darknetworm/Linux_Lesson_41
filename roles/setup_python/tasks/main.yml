@@ -1,0 +1,52 @@
+---
+#Создаем директорию для обработки python-скриптов nginx
+  - name: Make python sites directory
+    file:
+      path: /var/www/python_app
+      state: directory
+      mode: '0755'
+#Устанавливаем необходимые для работы django пакеты
+  - name: Install python packages
+    pip:
+      name:
+      - virtualenv
+      - virtualenvwrapper
+      - Django
+      - gunicorn
+#Создаем и активируем окружение для сайта django
+  - name: Activate site environment
+    become: false
+    shell: |
+      virtualenv test
+      source /home/vagrant/test/bin/activate
+    args:
+      executable: /bin/bash
+#Создаем сайт на основе django
+  - name: Setup django site
+    become: false
+    shell: django-admin startproject mysite
+    args:
+      executable: /bin/bash
+      chdir: /home/vagrant/test/
+#Копирируем сервис для WSGI сервер для python
+  - name: Copy gunicorn service
+    template:
+      src: gunicorn.service
+      dest: /etc/systemd/system/gunicorn.service
+#Активируем и запускаем WSGI сервер для python
+  - name: Start and enable gunicorn
+    service:
+      name: gunicorn
+      state: started
+      enabled: true
+#Копируем настройки nginx в директорию sites-available
+  - name: Copy python available
+    template:
+      src: python
+      dest: /etc/nginx/sites-available/python
+#Создаем симлинк для доступа к сайту
+  - name: Create simlink for python
+    file:
+      src: /etc/nginx/sites-available/python
+      dest: /etc/nginx/sites-enabled/python
+      state: link
